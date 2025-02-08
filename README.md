@@ -89,8 +89,8 @@ chmod +x master.sh
 ### 📚 Cool Projects That Inspired This Mess
 
 > - [CachyOS](https://github.com/cachyos) - The speed demons who make Arch go zoom
-  - [ARU](https://github.com/ventureoo/ARU.git) - The OG optimization wizards who showed us the way
-  - [Arch Wiki](https://wiki.archlinux.org/title/Improving_performance) - The sacred texts (I actually read them!)
+> - [ARU](https://github.com/ventureoo/ARU.git) - The OG optimization wizards who showed us the way
+> - [Arch Wiki](https://wiki.archlinux.org/title/Improving_performance) - The sacred texts (I actually read them!)
 
 ## 📜 Fine Print
 
