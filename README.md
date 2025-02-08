@@ -11,7 +11,7 @@
 
 </div>
 
----
+
 
 > 🤔 **Note**: This project exists because I was too lazy to manually configure my system every time. It might work, it might break your system, or it might just make your computer feel appreciated. Who knows? It's like playing Russian roulette with your Arch install (but with better odds... probably).
 
