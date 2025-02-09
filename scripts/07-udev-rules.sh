@@ -130,13 +130,13 @@ verify_rules() {
 
 # Function to apply rules
 apply_rules() {
-    run_with_spinner "Applying udev rules" bash -c "
-        # Reload udev rules
-        udevadm control --reload-rules
+    run_with_spinner "Applying udev rules" bash -c '
+        # Reload udev rules silently
+        udevadm control --reload-rules &>/dev/null
         
-        # Trigger rules for existing devices
-        udevadm trigger
-    "
+        # Trigger rules for existing devices silently
+        udevadm trigger --quiet --type=devices --action=change
+    '
 }
 
 # Main script
@@ -167,7 +167,10 @@ fi
 # Check for required packages
 if ! command -v hdparm >/dev/null 2>&1; then
     echo -e "${YELLOW}${BOLD}[!]${NC} Required package 'hdparm' not found. Installing..."
-    run_with_spinner "Installing hdparm" pacman -S --noconfirm hdparm
+    run_with_spinner "Installing hdparm" bash -c '
+        # Suppress all pacman output and progress bars
+        pacman -Sy --noconfirm --noprogressbar hdparm &>/dev/null
+    '
 fi
 
 echo -e "\n${BLUE}${BOLD}[i]${NC} Setting up system udev rules..."
