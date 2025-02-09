@@ -28,6 +28,7 @@ SYSTEM_PKGS=(
     "zsh"           # Shell
     "fzf"           # Fuzzy finder
     "zoxide"        # Smarter cd command
+    "gnu-free-fonts"
     "eza"           # Modern ls replacement
 )
 
