@@ -127,9 +127,16 @@ verify_installation() {
 # Function to enable and start the service
 enable_service() {
     run_with_spinner "Enabling PCI latency service" bash -c "
-        systemctl daemon-reload
-        systemctl enable pci-latency.service
-        systemctl start pci-latency.service
+        # Redirect all output to /dev/null
+        systemctl daemon-reload 2>/dev/null
+        systemctl enable --quiet pci-latency.service 2>/dev/null
+        systemctl start --quiet pci-latency.service 2>/dev/null
+        
+        # Verify service status silently
+        if ! systemctl is-active --quiet pci-latency.service; then
+            echo 'Failed to start PCI latency service' >&2
+            exit 1
+        fi
     "
 }
 
