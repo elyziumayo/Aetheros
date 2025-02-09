@@ -44,29 +44,29 @@ chmod +x master.sh
 
 ```
 ├── System Optimization
-│   ├── 01-alhp       → CPU & Hardware optimization
-│   ├── 02-makepkg    → Package build optimization
-│   ├── 03-zram       → Memory compression & management
-│   └── 04-sysctl     → Kernel parameter tuning
+│   ├── alhp       → CPU & Hardware optimization
+│   ├── makepkg    → Package build optimization
+│   ├── zram       → Memory compression & management
+│   └── sysctl     → Kernel parameter tuning
 │
 ├── Hardware & Services
-│   ├── 05-systemd    → Service & resource optimization
-│   ├── 06-pci        → PCI latency optimization
-│   ├── 07-udev       → Device rules management
-│   └── 08-tmpfiles   → Temporary file optimization
+│   ├── systemd    → Service & resource optimization
+│   ├── pci        → PCI latency optimization
+│   ├── udev       → Device rules management
+│   └── tmpfiles   → Temporary file optimization
 │
 ├── Graphics & Audio
-│   ├── 09-gpu        → GPU driver optimization
-│   ├── 10-pacman     → Package cache management
-│   ├── 11-irqbalance → Interrupt handling
-│   └── 12-pipewire   → Audio system optimization
+│   ├── gpu        → GPU driver optimization
+│   ├── pacman     → Package cache management
+│   ├── irqbalance → Interrupt handling
+│   └── pipewire   → Audio system optimization
 │
 └── System Management
-    ├── 13-oomd       → Out of memory handling
-    ├── 14-yay        → AUR helper setup
-    ├── 15-package    → System package installer
-    ├── 16-cleanup    → System cleaner
-    └── 17-dotfiles   → Dotfiles manager
+    ├── oomd       → Out of memory handling
+    ├── yay        → AUR helper setup
+    ├── package    → System package installer
+    ├── cleanup    → System cleaner
+    └── dotfiles   → Dotfiles manager
 ```
 
 ### ⚙️ Requirements
