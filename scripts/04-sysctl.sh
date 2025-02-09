@@ -61,6 +61,7 @@ kernel.unprivileged_userns_clone = 1
 kernel.printk = 3 3 3 3
 kernel.kptr_restrict = 2
 kernel.kexec_load_disabled = 1
+kernel.split_lock_mitigate=0
 
 # Network Settings
 net.ipv4.tcp_ecn = 1
