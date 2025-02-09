@@ -77,9 +77,10 @@ EOF
 # Function to enable and start timer
 enable_timer() {
     run_with_spinner "Enabling and starting pacman-cleaner timer" bash -c "
-        systemctl daemon-reload
-        systemctl enable pacman-cleaner.timer
-        systemctl start pacman-cleaner.timer
+        # Redirect all output to /dev/null to prevent leaking messages
+        systemctl daemon-reload &>/dev/null
+        systemctl enable --quiet pacman-cleaner.timer &>/dev/null
+        systemctl start --quiet pacman-cleaner.timer &>/dev/null
     "
 }
 
