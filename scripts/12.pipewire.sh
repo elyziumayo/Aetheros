@@ -171,17 +171,94 @@ enable_services() {
 
     run_with_spinner "Enabling PipeWire services" bash -c "
         ${run_as_user_cmd}
-        # First reload daemon
-        run_as_user \"systemctl --user daemon-reload\" || exit 1
         
-        # Then enable and start services
-        run_as_user \"systemctl --user enable --now pipewire.socket\" || exit 1
-        run_as_user \"systemctl --user enable --now pipewire.service\" || exit 1
-        run_as_user \"systemctl --user enable --now pipewire-pulse.service\" || exit 1
-        run_as_user \"systemctl --user enable --now wireplumber.service\" || exit 1
+        # Create all required systemd directories silently
+        required_dirs=(
+            \"${REAL_HOME}/.config/systemd/user\"
+            \"${REAL_HOME}/.config/systemd/user/sockets.target.wants\"
+            \"${REAL_HOME}/.config/systemd/user/default.target.wants\"
+        )
         
-        # Wait for services to start
+        for dir in \"\${required_dirs[@]}\"; do
+            if ! run_as_user \"mkdir -p '\$dir'\" &>/dev/null; then
+                echo \"Failed to create directory: \$dir\" >&2
+                exit 1
+            fi
+        done
+        
+        # First stop any running services
+        run_as_user \"systemctl --user stop pipewire.socket pipewire.service pipewire-pulse.service wireplumber.service\" &>/dev/null || true
+        
+        # Reload systemd daemon quietly
+        run_as_user \"systemctl --user daemon-reload\" &>/dev/null || exit 1
+        
+        # Enable and start services quietly
+        services=(
+            'pipewire.socket'
+            'pipewire.service'
+            'pipewire-pulse.service'
+            'wireplumber.service'
+        )
+        
+        for service in \"\${services[@]}\"; do
+            # Create symlinks manually if needed
+            case \"\$service\" in
+                pipewire.socket)
+                    target=\"${REAL_HOME}/.config/systemd/user/sockets.target.wants/pipewire.socket\"
+                    source=\"/usr/lib/systemd/user/pipewire.socket\"
+                    ;;
+                *)
+                    target=\"${REAL_HOME}/.config/systemd/user/default.target.wants/\$service\"
+                    source=\"/usr/lib/systemd/user/\$service\"
+                    ;;
+            esac
+            
+            # Remove existing symlink if it exists
+            run_as_user \"rm -f '\$target'\" &>/dev/null || true
+            
+            # Create new symlink silently
+            if ! run_as_user \"ln -s '\$source' '\$target'\" &>/dev/null; then
+                echo \"Failed to create symlink for \$service\" >&2
+                exit 1
+            fi
+            
+            # Start the service silently
+            if ! run_as_user \"systemctl --user start --quiet \$service\" &>/dev/null; then
+                echo \"Failed to start \$service\" >&2
+                exit 1
+            fi
+            
+            # Verify service is active silently
+            if ! run_as_user \"systemctl --user is-active --quiet \$service\" &>/dev/null; then
+                echo \"Failed to verify \$service is running\" >&2
+                exit 1
+            fi
+        done
+        
+        # Wait for services to fully initialize
         sleep 2
+        
+        # Final verification of all symlinks
+        expected_symlinks=(
+            '${REAL_HOME}/.config/systemd/user/sockets.target.wants/pipewire.socket'
+            '${REAL_HOME}/.config/systemd/user/default.target.wants/pipewire.service'
+            '${REAL_HOME}/.config/systemd/user/default.target.wants/pipewire-pulse.service'
+            '${REAL_HOME}/.config/systemd/user/default.target.wants/wireplumber.service'
+        )
+        
+        for symlink in \"\${expected_symlinks[@]}\"; do
+            if [ ! -L \"\$symlink\" ]; then
+                echo \"Missing required symlink: \$symlink\" >&2
+                exit 1
+            fi
+            
+            # Verify symlink target exists silently
+            target=\$(readlink \"\$symlink\" 2>/dev/null)
+            if [ ! -f \"\$target\" ]; then
+                echo \"Invalid symlink target for \$symlink: \$target\" >&2
+                exit 1
+            fi
+        done
     "
 }
 
@@ -197,13 +274,31 @@ verify_setup() {
 
     run_with_spinner "Verifying PipeWire setup" bash -c "
         ${run_as_user_cmd}
-        # Check if services are running
-        if ! run_as_user \"systemctl --user is-active pipewire.service\" &>/dev/null; then
-            echo 'PipeWire service is not running' >&2
+        
+        # Check if all required services are running
+        services=(
+            'pipewire.socket'
+            'pipewire.service'
+            'pipewire-pulse.service'
+            'wireplumber.service'
+        )
+        
+        for service in \"\${services[@]}\"; do
+            if ! run_as_user \"systemctl --user is-active --quiet \$service\"; then
+                echo \"\$service is not running\" >&2
+                exit 1
+            fi
+        done
+        
+        # Verify PipeWire is responding
+        if ! run_as_user \"pw-cli info &>/dev/null\"; then
+            echo \"PipeWire is not responding\" >&2
             exit 1
         fi
-        if ! run_as_user \"systemctl --user is-active wireplumber.service\" &>/dev/null; then
-            echo 'Wireplumber service is not running' >&2
+        
+        # Verify audio output is available
+        if ! run_as_user \"pactl info &>/dev/null\"; then
+            echo \"PulseAudio interface is not available\" >&2
             exit 1
         fi
     "
