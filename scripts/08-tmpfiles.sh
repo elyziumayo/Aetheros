@@ -39,12 +39,25 @@ run_with_spinner() {
     spinner $! "$msg"
 }
 
+# Function to clean existing configurations
+clean_existing_config() {
+    run_with_spinner "Cleaning existing configurations" bash -c '
+        # Remove any existing coredump configuration
+        rm -f /etc/tmpfiles.d/systemd-coredump.conf
+        # Remove our old configuration if it exists
+        rm -f /etc/tmpfiles.d/99-sysctl.conf
+    '
+}
+
 # Function to create tmpfiles configuration
 create_tmpfiles_conf() {
-    run_with_spinner "Creating tmpfiles configuration" bash -c "
-        cat > /etc/tmpfiles.d/99-sysctl.conf << \"EOF\"
-# Clear coredumps older than 3 days
-d /var/lib/systemd/coredump 0755 root root 3d
+    run_with_spinner "Creating tmpfiles configuration" bash -c '
+        # Create our custom configuration
+        cat > /etc/tmpfiles.d/99-sysctl.conf << "EOF"
+# Custom system performance configuration
+
+# Clear coredumps older than 3 days (overrides default systemd config)
+D! /var/lib/systemd/coredump 0755 root root 3d
 
 # Disable zswap when using ZRAM
 w! /sys/module/zswap/parameters/enabled - - - - N
@@ -60,7 +73,7 @@ w! /sys/kernel/mm/transparent_hugepage/khugepaged/max_ptes_none - - - - 409
 # Optimize THP for tcmalloc performance
 w! /sys/kernel/mm/transparent_hugepage/defrag - - - - defer+madvise
 EOF
-    "
+    '
 }
 
 # Function to create documentation
@@ -168,7 +181,10 @@ fi
 
 echo -e "\n${BLUE}${BOLD}[i]${NC} Setting up system performance configuration..."
 
-# Create configuration
+# Clean existing configurations
+clean_existing_config
+
+# Create new configuration
 create_tmpfiles_conf
 create_documentation
 
