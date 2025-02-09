@@ -67,19 +67,35 @@ configure_irqbalance() {
         # Create override configuration
         cat > /etc/systemd/system/irqbalance.service.d/override.conf << \"EOF\"
 [Service]
-Environment=IRQBALANCE_ARGS=--foreground
+Environment=IRQBALANCE_ARGS=\"--foreground\"
+Type=simple
+Restart=always
+RestartSec=2
 EOF
 
         # Reload systemd to apply changes
-        systemctl daemon-reload
+        systemctl daemon-reload &>/dev/null
     "
 }
 
 # Function to enable and start irqbalance
 enable_irqbalance() {
     run_with_spinner "Enabling and starting irqbalance service" bash -c "
-        systemctl enable irqbalance &>/dev/null
-        systemctl start irqbalance &>/dev/null
+        # Stop any existing instance
+        systemctl stop irqbalance &>/dev/null || true
+        
+        # Enable and start the service
+        systemctl enable --now irqbalance &>/dev/null
+        
+        # Give the service some time to start
+        sleep 2
+        
+        # Verify it's running
+        if ! systemctl is-active --quiet irqbalance; then
+            # Try restarting if initial start failed
+            systemctl restart irqbalance &>/dev/null
+            sleep 2
+        fi
     "
 }
 
@@ -90,23 +106,27 @@ verify_setup() {
         
         # Check if package is installed
         if ! pacman -Qi irqbalance &>/dev/null; then
-            echo -e \"${RED}${BOLD}[✗]${NC} irqbalance package not installed\"
+            echo -e \"${RED}${BOLD}[✗]${NC} irqbalance package not installed\" >&2
             errors=\$((errors+1))
         fi
         
-        # Check if service is enabled and active
-        if ! systemctl is-enabled irqbalance &>/dev/null; then
-            echo -e \"${RED}${BOLD}[✗]${NC} irqbalance service not enabled\"
+        # Check if service is enabled
+        if ! systemctl is-enabled --quiet irqbalance; then
+            echo -e \"${RED}${BOLD}[✗]${NC} irqbalance service not enabled\" >&2
             errors=\$((errors+1))
         fi
         
-        if ! systemctl is-active irqbalance &>/dev/null; then
-            echo -e \"${RED}${BOLD}[✗]${NC} irqbalance service not active\"
+        # Check if service is active
+        if ! systemctl is-active --quiet irqbalance; then
+            # Get service status for debugging
+            status=\$(systemctl status irqbalance 2>&1)
+            echo -e \"${RED}${BOLD}[✗]${NC} irqbalance service not active\" >&2
+            echo \"Service status: \$status\" >&2
             errors=\$((errors+1))
         fi
         
         if [ \"\$errors\" -gt 0 ]; then
-            echo -e \"${RED}${BOLD}[✗]${NC} Setup verification failed\"
+            echo -e \"${RED}${BOLD}[✗]${NC} Setup verification failed\" >&2
             exit 1
         fi
     "
