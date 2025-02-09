@@ -8,10 +8,6 @@ RED='\033[0;31m'
 NC='\033[0m'
 BOLD='\033[1m'
 
-# Get real user's home directory
-REAL_HOME=$(eval echo ~${SUDO_USER})
-BUILD_DIR="${REAL_HOME}/.cache/yay-build"
-
 # Spinner function for visual feedback
 spinner() {
     local pid=$1
@@ -39,60 +35,24 @@ spinner() {
 run_with_spinner() {
     local msg="$1"
     shift
-    ("$@") &
+    {
+        "$@"
+    } >/dev/null 2>&1 &
     spinner $! "$msg"
 }
 
-# Function to check if package is installed
-check_package_installed() {
-    pacman -Qi "$1" &>/dev/null
-}
+# Ensure we have sudo privileges
+if [ "$EUID" -ne 0 ]; then
+    echo -e "${RED}${BOLD}[✗]${NC} This script must be run with sudo"
+    exit 1
+fi
 
-# Function to install base dependencies
-install_dependencies() {
-    run_with_spinner "Installing base dependencies" bash -c '
-        pacman -Sy --noconfirm --needed git base-devel &>/dev/null
-    '
-}
-
-# Function to clean up build directory
-cleanup_build() {
-    run_with_spinner "Cleaning up build directory" bash -c "
-        rm -rf \"${BUILD_DIR}\"
-    "
-}
-
-# Function to build and install yay
-install_yay() {
-    # Create build directory and set permissions
-    run_with_spinner "Preparing build environment" bash -c "
-        mkdir -p \"${BUILD_DIR}\"
-        chown -R ${SUDO_USER}:$(id -gn ${SUDO_USER}) \"${BUILD_DIR}\"
-    "
-
-    # Clone yay repository
-    run_with_spinner "Cloning yay repository" bash -c "
-        cd \"${BUILD_DIR}\" && sudo -u ${SUDO_USER} git clone https://aur.archlinux.org/yay.git &>/dev/null
-    "
-
-    # Build and install yay
-    echo -e "${BLUE}${BOLD}[i]${NC} Building yay package..."
-    
-    # Create a temporary sudoers file for makepkg
-    echo "${SUDO_USER} ALL=(ALL) NOPASSWD: /usr/bin/pacman" > /etc/sudoers.d/yay-temp
-    
-    # Build and install as the user
-    if ! sudo -u ${SUDO_USER} bash -c "cd \"${BUILD_DIR}/yay\" && makepkg -si --noconfirm" &>/dev/null; then
-        rm -f /etc/sudoers.d/yay-temp
-        echo -e "${RED}${BOLD}[✗]${NC} Build failed"
-        exit 1
-    fi
-    
-    # Remove temporary sudoers file
-    rm -f /etc/sudoers.d/yay-temp
-    
-    echo -e "${GREEN}${BOLD}[✓]${NC} Build completed successfully"
-}
+# Get real user
+REAL_USER="$SUDO_USER"
+if [ -z "$REAL_USER" ]; then
+    echo -e "${RED}${BOLD}[✗]${NC} Could not determine the real user"
+    exit 1
+fi
 
 # Main script
 clear
@@ -100,51 +60,57 @@ echo -e "${BLUE}${BOLD}╔══════════════════
 echo -e "${BLUE}${BOLD}║         YAY AUR Helper Setup           ║${NC}"
 echo -e "${BLUE}${BOLD}╚════════════════════════════════════════╝${NC}\n"
 
-# Check if running as root
-if [ "$EUID" -ne 0 ]; then
-    echo -e "${RED}${BOLD}[✗]${NC} This script must be run with sudo"
-    exit 1
-fi
-
-# Check if SUDO_USER is set
-if [ -z "$SUDO_USER" ]; then
-    echo -e "${RED}${BOLD}[✗]${NC} This script must be run with sudo, not as root directly"
-    exit 1
-fi
-
-# Check for existing yay installation
-if check_package_installed "yay"; then
-    echo -e "${YELLOW}${BOLD}[!]${NC} Yay is already installed on your system"
-    echo -ne "${BLUE}${BOLD}[?]${NC} Would you like to reinstall it? [y/N] "
-    read -n 1 -r REPLY
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
-        exit 0
-    fi
+# Check if yay is already installed first
+if pacman -Qi yay &>/dev/null; then
+    echo -e "${BLUE}${BOLD}[i]${NC} This script will reinstall the Yay AUR helper."
 else
-    echo -ne "${BLUE}${BOLD}[?]${NC} Would you like to install Yay AUR helper? [Y/n] "
-    read -n 1 -r REPLY
-    echo
-    if [[ ! $REPLY =~ ^[Yy]$ ]] && [[ ! -z $REPLY ]]; then
-        echo -e "${YELLOW}${BOLD}[!]${NC} Installation cancelled."
-        exit 0
-    fi
+    echo -e "${BLUE}${BOLD}[i]${NC} This script will install the Yay AUR helper."
 fi
 
-echo -e "\n${BLUE}${BOLD}[i]${NC} Setting up Yay..."
+echo -ne "${BLUE}${BOLD}[?]${NC} Would you like to proceed? [y/N] "
+read -n 1 -r REPLY
+echo
+if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+    echo -e "${YELLOW}${BOLD}[!]${NC} Operation cancelled by user"
+    exit 0
+fi
 
-# Clean up any existing build directory
-cleanup_build
+echo -e "\n${BLUE}${BOLD}[i]${NC} Setting up Yay AUR helper..."
 
-# Install dependencies
-install_dependencies
+# Check if yay is already installed
+if pacman -Qi yay &>/dev/null; then
+    run_with_spinner "Removing existing installation" \
+        pacman -Rns --noconfirm yay
+fi
 
-# Install yay
-install_yay
+run_with_spinner "Installing dependencies" \
+    pacman -Sy --noconfirm --needed git base-devel
 
-# Final cleanup
-cleanup_build
+# Prepare build directory
+BUILD_DIR="/tmp/yay-build"
+run_with_spinner "Preparing build environment" \
+    bash -c "rm -rf '$BUILD_DIR' && mkdir -p '$BUILD_DIR' && chown '$REAL_USER:$(id -gn $REAL_USER)' '$BUILD_DIR'"
 
-echo -e "\n${GREEN}${BOLD}[✓]${NC} Yay has been installed successfully!"
-echo -e "${BLUE}${BOLD}[i]${NC} You can now use yay to install packages from the AUR"
-echo -e "${YELLOW}${BOLD}[!]${NC} Example usage: yay -S package-name" 
+# Clone and build
+cd "$BUILD_DIR" || exit 1
+run_with_spinner "Cloning Yay repository" \
+    sudo -u "$REAL_USER" git clone --quiet https://aur.archlinux.org/yay.git .
+
+run_with_spinner "Building Yay package" \
+    sudo -u "$REAL_USER" makepkg -s --noconfirm
+
+run_with_spinner "Installing Yay" \
+    pacman -U --noconfirm yay-*.pkg.tar.zst
+
+run_with_spinner "Cleaning up" \
+    rm -rf "$BUILD_DIR"
+
+# Verify and finish
+if pacman -Qi yay &>/dev/null; then
+    echo -e "\n${GREEN}${BOLD}[✓]${NC} Yay has been installed successfully!"
+    echo -e "${BLUE}${BOLD}[i]${NC} You can now use yay to install packages from the AUR"
+    echo -e "${YELLOW}${BOLD}[!]${NC} Example usage: yay -S package-name\n"
+else
+    echo -e "\n${RED}${BOLD}[✗]${NC} Installation verification failed\n"
+    exit 1
+fi
