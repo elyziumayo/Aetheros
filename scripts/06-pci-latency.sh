@@ -136,7 +136,7 @@ enable_service() {
 # Main script
 clear
 echo -e "${BLUE}${BOLD}╔════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}${BOLD}║      PCI Latency Optimization         ║${NC}"
+echo -e "${BLUE}${BOLD}║      PCI Latency Optimization          ║${NC}"
 echo -e "${BLUE}${BOLD}╚════════════════════════════════════════╝${NC}"
 echo
 
