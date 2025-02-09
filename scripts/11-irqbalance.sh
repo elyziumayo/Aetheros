@@ -136,7 +136,7 @@ remove_existing_config() {
 # Main script
 clear
 echo -e "${BLUE}${BOLD}╔════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}${BOLD}║        IRQ Balance Setup              ║${NC}"
+echo -e "${BLUE}${BOLD}║        IRQ Balance Setup               ║${NC}"
 echo -e "${BLUE}${BOLD}╚════════════════════════════════════════╝${NC}"
 echo
 
