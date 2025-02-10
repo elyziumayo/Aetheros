@@ -48,7 +48,7 @@ chmod +x master.sh
 │   ├── makepkg    → Package build optimization
 │   ├── zram       → Memory compression & management
 │   └── sysctl     → Kernel parameter tuning
-|   └── initramfs  → Acceleration unpacking initramfs
+│   └── initramfs  →Acceleration unpacking initramfs
 │
 ├── Hardware & Services
 │   ├── systemd    → Service & resource optimization
