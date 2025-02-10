@@ -161,6 +161,13 @@ if [ -f "/usr/bin/pci-latency" ] || [ -f "/etc/systemd/system/pci-latency.servic
     if [[ ! $REPLY =~ ^[Yy]$ ]]; then
         exit 0
     fi
+else
+    echo -ne "${YELLOW}${BOLD}[!]${NC} This will install PCI latency optimization. Would you like to proceed? [y/N] "
+    read -n 1 -r REPLY
+    echo
+    if [[ ! $REPLY =~ ^[Yy]$ ]]; then
+        exit 0
+    fi
 fi
 
 # Check for required package
