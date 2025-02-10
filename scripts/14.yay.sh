@@ -8,11 +8,37 @@ RED='\033[0;31m'
 NC='\033[0m'
 BOLD='\033[1m'
 
-# Get real user
+# Get real user and environment
 REAL_USER="${SUDO_USER}"
 if [ -z "$REAL_USER" ]; then
     error "Could not determine the real user"
 fi
+
+# Ensure proper environment variables
+HOME_DIR=$(eval echo ~"$REAL_USER")
+export HOME="$HOME_DIR"
+export USER="$REAL_USER"
+export XDG_CONFIG_HOME="${HOME_DIR}/.config"
+export XDG_CACHE_HOME="${HOME_DIR}/.cache"
+export XDG_DATA_HOME="${HOME_DIR}/.local/share"
+export XDG_RUNTIME_DIR="/run/user/$(id -u ${REAL_USER})"
+
+# Create required directories
+mkdir -p "${XDG_CONFIG_HOME}" "${XDG_CACHE_HOME}" "${XDG_DATA_HOME}"
+chown -R "$REAL_USER:$(id -gn $REAL_USER)" "${XDG_CONFIG_HOME}" "${XDG_CACHE_HOME}" "${XDG_DATA_HOME}"
+
+# Function to run as real user with proper environment
+run_as_user() {
+    local cmd="$1"
+    sudo -H -u "$REAL_USER" \
+        HOME="$HOME_DIR" \
+        USER="$REAL_USER" \
+        XDG_CONFIG_HOME="$XDG_CONFIG_HOME" \
+        XDG_CACHE_HOME="$XDG_CACHE_HOME" \
+        XDG_DATA_HOME="$XDG_DATA_HOME" \
+        XDG_RUNTIME_DIR="$XDG_RUNTIME_DIR" \
+        bash -c "$cmd"
+}
 
 # Spinner function for visual feedback
 spinner() {
@@ -147,7 +173,7 @@ echo "$REAL_USER ALL=(ALL) NOPASSWD: /usr/bin/yay" >> /etc/sudoers.d/11-install-
 chmod 440 /etc/sudoers.d/11-install-yay
 
 # Build package
-if ! run_with_spinner "Building Yay package" sudo -u "$REAL_USER" bash -c 'cd "'$BUILD_DIR'" && makepkg -s --noconfirm --noprogressbar'; then
+if ! run_with_spinner "Building Yay package" run_as_user "cd '$BUILD_DIR' && makepkg -s --noconfirm --noprogressbar"; then
     rm -f /etc/sudoers.d/11-install-yay
     cd "$ORIG_DIR" || true
     error "Failed to build yay package"
@@ -171,24 +197,29 @@ if ! pacman -Qi yay &>/dev/null; then
 fi
 
 # Configure yay
-HOME_DIR=$(eval echo ~"$REAL_USER")
 if ! run_with_spinner "Configuring yay" bash -c "
     # Create yay config directory
-    mkdir -p '$HOME_DIR/.config/yay'
-    chown -R '$REAL_USER:$(id -gn $REAL_USER)' '$HOME_DIR/.config/yay'
+    mkdir -p '$XDG_CONFIG_HOME/yay'
+    chown -R '$REAL_USER:$(id -gn $REAL_USER)' '$XDG_CONFIG_HOME/yay'
     
     # Write yay configuration directly
-    cat > '$HOME_DIR/.config/yay/config.json' << EOF
+    cat > '$XDG_CONFIG_HOME/yay/config.json' << EOF
 {
     \"answerclean\": \"All\",
     \"answerdiff\": \"None\",
     \"answeredit\": \"None\",
     \"cleanafter\": true,
     \"sudoflags\": \"-S\",
-    \"sudoloop\": true
+    \"sudoloop\": true,
+    \"redownload\": \"no\",
+    \"noredownload\": true,
+    \"removemake\": \"yes\",
+    \"combinedupgrade\": true,
+    \"batchinstall\": true,
+    \"savechanges\": false
 }
 EOF
-    chown '$REAL_USER:$(id -gn $REAL_USER)' '$HOME_DIR/.config/yay/config.json'
+    chown '$REAL_USER:$(id -gn $REAL_USER)' '$XDG_CONFIG_HOME/yay/config.json'
 "; then
     rm -f /etc/sudoers.d/11-install-yay
     warning "Failed to configure yay, but installation was successful"
