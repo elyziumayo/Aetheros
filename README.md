@@ -94,7 +94,8 @@ chmod +x master.sh
 - [ARU](https://github.com/ventureoo/ARU.git) - The OG optimization wizards who showed us the way
 - [Arch Wiki](https://wiki.archlinux.org/title/Improving_performance) - The sacred texts (I actually read them!)
 - [Alph-repo](https://github.com/an0nfunc/ALHP.git)  - Nothing without them
-  
+- [Chaotic-aur](https://github.com/chaotic-aur)  -lots of help in simplifying stuff
+
 ## 📜 Fine Print
 
 Do whatever you want with this · Just don't blame me if your computer starts speaking in binary
