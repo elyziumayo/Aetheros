@@ -178,7 +178,7 @@ check_zram_status() {
 # Main script
 clear
 echo -e "${BLUE}${BOLD}╔════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}${BOLD}║         ZRAM Configuration            ║${NC}"
+echo -e "${BLUE}${BOLD}║         ZRAM Configuration             ║${NC}"
 echo -e "${BLUE}${BOLD}╚════════════════════════════════════════╝${NC}"
 echo
 
