@@ -29,6 +29,7 @@ SYSTEM_PKGS=(
     "fzf"           # Fuzzy finder
     "zoxide"        # Smarter cd command
     "gnu-free-fonts"
+    "btop"
     "eza"           # Modern ls replacement
 )
 
