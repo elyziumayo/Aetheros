@@ -122,7 +122,7 @@ show_ufw_status() {
 # Main script
 clear
 echo -e "${BLUE}${BOLD}╔════════════════════════════════════════╗${NC}"
-echo -e "${BLUE}${BOLD}║        UFW Firewall Setup              ║${NC}"
+echo -e "${BLUE}${BOLD}║        UFW Firewall Setup                                     ║${NC}"
 echo -e "${BLUE}${BOLD}╚════════════════════════════════════════╝${NC}\n"
 
 # Check if running as root
