@@ -93,7 +93,8 @@ chmod +x master.sh
 - [CachyOS](https://github.com/cachyos) - The speed demons who make Arch go zoom
 - [ARU](https://github.com/ventureoo/ARU.git) - The OG optimization wizards who showed us the way
 - [Arch Wiki](https://wiki.archlinux.org/title/Improving_performance) - The sacred texts (I actually read them!)
-
+- [Alph-repo](https://github.com/an0nfunc/ALHP.git)  
+  
 ## 📜 Fine Print
 
 Do whatever you want with this · Just don't blame me if your computer starts speaking in binary
