@@ -1,4 +1,4 @@
-# ⚡ Aetheros (alpha )
+# ⚡ Aetheros (pre-alpha )
 
 <div align="center">
 
