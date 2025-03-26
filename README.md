@@ -28,7 +28,7 @@
 
 ```bash
 # Clone this masterpiece
-git clone https://github.com/elysiumayo/Aetheros.git
+git clone https://github.com/elyziumayo/Aetheros.git
 
 # Enter the danger zone
 cd Aetheros
